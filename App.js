@@ -7,6 +7,7 @@
  */
 
 import React, {PureComponent} from 'react';
+
 import {
   SafeAreaView,
   StyleSheet,
@@ -14,48 +15,56 @@ import {
   View,
   Text,
   StatusBar,
+  NativeModules,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
 
-import {
-  Header,
-  LearnMoreLinks,
-  Colors,
-  DebugInstructions,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-import OneSignal from 'react-native-onesignal'; // Import package from node modules
+import {Header, Colors} from 'react-native/Libraries/NewAppScreen';
 
 class App extends PureComponent {
   constructor(properties) {
     super(properties);
-    OneSignal.init('811f6bfa-7383-40ee-891b-27f45b5f003b');
-
-    OneSignal.inFocusDisplaying(2);
-    OneSignal.addEventListener('received', this.onReceived);
-    OneSignal.addEventListener('opened', this.onOpened);
-    OneSignal.addEventListener('ids', this.onIds);
+    this.state = {
+      textImei: '',
+    };
   }
 
-  componentWillUnmount() {
-    OneSignal.removeEventListener('received', this.onReceived);
-    OneSignal.removeEventListener('opened', this.onOpened);
-    OneSignal.removeEventListener('ids', this.onIds);
+  async componentDidMount() {
+    if (Platform.OS === 'android') {
+      this.getImeiAndroid();
+    } else {
+      NativeModules.Device.getUUID((err, name) => {
+        this.setState({textImei: name[0]});
+      });
+    }
   }
 
-  onReceived(notification) {
-    console.log('Notification received: ', notification);
+  async getImeiAndroid() {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.READ_PHONE_STATE,
+        {
+          title: 'Read Phone App Camera Permission',
+          message: 'Read Phone App needs access ' + 'so awesome.',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        },
+      );
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        NativeModules.Device.getImei().then(imeiList => {
+          this.setState({textImei: imeiList});
+          console.log(imeiList);
+        });
+      } else {
+        console.log('Camera permission denied');
+      }
+    } catch (err) {
+      console.warn(err);
+    }
   }
 
-  onOpened(openResult) {
-    console.log('Message: ', openResult.notification.payload.body);
-    console.log('Data: ', openResult.notification.payload.additionalData);
-    console.log('isActive: ', openResult.notification.isAppInFocus);
-    console.log('openResult: ', openResult);
-  }
-
-  onIds(device) {
-    console.log('Device info: ', device);
-  }
   render() {
     return (
       <>
@@ -72,31 +81,11 @@ class App extends PureComponent {
             )}
             <View style={styles.body}>
               <View style={styles.sectionContainer}>
-                <Text style={styles.sectionTitle}>Step One</Text>
+                <Text style={styles.sectionTitle}>Imei Number</Text>
                 <Text style={styles.sectionDescription}>
-                  Edit <Text style={styles.highlight}>App.js</Text> to change
-                  this screen and then come back to see your edits.
+                  {this.state.textImei}
                 </Text>
               </View>
-              <View style={styles.sectionContainer}>
-                <Text style={styles.sectionTitle}>See Your Changes</Text>
-                <Text style={styles.sectionDescription}>
-                  <ReloadInstructions />
-                </Text>
-              </View>
-              <View style={styles.sectionContainer}>
-                <Text style={styles.sectionTitle}>Debug</Text>
-                <Text style={styles.sectionDescription}>
-                  <DebugInstructions />
-                </Text>
-              </View>
-              <View style={styles.sectionContainer}>
-                <Text style={styles.sectionTitle}>Learn More</Text>
-                <Text style={styles.sectionDescription}>
-                  Read the docs to discover what to do next:
-                </Text>
-              </View>
-              <LearnMoreLinks />
             </View>
           </ScrollView>
         </SafeAreaView>
