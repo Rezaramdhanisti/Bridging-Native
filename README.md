@@ -1,7 +1,7 @@
 
 
 ### Get Imei from Android and UUID from iOS using bridge to React Native
-Cannot get Imei from iOS based on here https://stackoverflow.com/questions/19927160/finding-imei-number-using-objective-c
+Cannot get Imei from iOS based on here https://stackoverflow.com/questions/19927160/finding-imei-number-using-objective-c so im using UUID
 
 #### Installation Android
 react-native run-android
